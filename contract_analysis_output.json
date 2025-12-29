@@ -1,0 +1,286 @@
+{
+  "schema_version": "1.0",
+  "context": {
+    "contract_type": "nda",
+    "perspective": "vendor"
+  },
+  "clauses": [
+    {
+      "id": "5",
+      "title": "Relationships",
+      "text": "Nothing contained in this Agreement shall be deemed to constitute either party a partner, joint venture or employee of the other party for any purpose. 6.",
+      "types": [
+        "GENERAL"
+      ],
+      "primary_type": "GENERAL",
+      "secondary_types": [],
+      "entities": {
+        "money": [],
+        "dates": [],
+        "durations": [],
+        "parties": [
+          "employee"
+        ],
+        "locations": []
+      }
+    },
+    {
+      "id": "6",
+      "title": "Severability",
+      "text": "If a court finds any provision of this Agreement invalid or unenforceable, the remainder of this Agreement shall be interpreted so as best to affect the intent of the parties. 7.",
+      "types": [
+        "SEVERABILITY"
+      ],
+      "primary_type": "SEVERABILITY",
+      "secondary_types": [],
+      "entities": {
+        "money": [],
+        "dates": [],
+        "durations": [],
+        "parties": [],
+        "locations": []
+      }
+    },
+    {
+      "id": "7",
+      "title": "Integration",
+      "text": "This Agreement expresses the complete understanding of the parties with respect to the subject matter and supersedes all prior proposals, agreements, representations, and understandings. This Agreement may not be amended except in writing signed by both parties. 8.",
+      "types": [
+        "WARRANTY",
+        "ENTIRE_AGREEMENT"
+      ],
+      "primary_type": "WARRANTY",
+      "secondary_types": [
+        "ENTIRE_AGREEMENT"
+      ],
+      "entities": {
+        "money": [],
+        "dates": [],
+        "durations": [],
+        "parties": [],
+        "locations": []
+      }
+    },
+    {
+      "id": "8",
+      "title": "Waiver",
+      "text": "The failure to exercise any right provided in this Agreement shall not be a waiver of prior or subsequent rights. 9.",
+      "types": [
+        "GENERAL"
+      ],
+      "primary_type": "GENERAL",
+      "secondary_types": [],
+      "entities": {
+        "money": [],
+        "dates": [],
+        "durations": [],
+        "parties": [],
+        "locations": []
+      }
+    },
+    {
+      "id": "9",
+      "title": "Notice",
+      "text": "of Immunity. Employee is provided notice that an individual shall not be held criminally or civilly liable under any federal or state trade secret law for the disclosure of a trade secret that is made (i) in confidence to a federal, state, or local government official, either directly or indirectly, or to an attorney; and (ii) solely for the purpose of reporting or investigating a suspected violation of law; or is made in a complaint or other document filed in a lawsuit or other proceeding, if such filing is made under seal. An individual who files a lawsuit for retaliation by an employer for reporting a suspected violation of law may disclose the trade secret to the attorney of the individual and use the trade secret information in the court proceeding, if the individual (i) files any document containing the trade secret under seal; and (ii) does not disclose the trade secret, except pursuant to court order. This Agreement and each party's obligations shall be binding on the representatives, assigns and successors of such party. Each party has signed this Agreement through its authorized representative. DISCLOSING PARTY Signature: _____________________________________________________ Typed or Printed Name: ___________________________ Date: _______________ RECEIVING PARTY Signature: _____________________________________________________ Typed or Printed Name: ___________________________ Date: _______________",
+      "types": [
+        "CONFIDENTIALITY",
+        "LIABILITY"
+      ],
+      "primary_type": "CONFIDENTIALITY",
+      "secondary_types": [
+        "LIABILITY"
+      ],
+      "entities": {
+        "money": [],
+        "dates": [],
+        "durations": [],
+        "parties": [
+          "DISCLOSING PARTY",
+          "RECEIVING PARTY",
+          "Employee",
+          "employer"
+        ],
+        "locations": [
+          "indirectly, or"
+        ]
+      }
+    }
+  ],
+  "risk_analysis": {
+    "overall_risk": "MEDIUM",
+    "total_clauses": 5,
+    "high_risk_clauses": 1,
+    "medium_risk_clauses": 0,
+    "low_risk_clauses": 4,
+    "clause_analyses": [
+      {
+        "clause_id": "5",
+        "clause_title": "Relationships",
+        "risk_level": "LOW",
+        "matched_rules": [],
+        "risk_count": 0
+      },
+      {
+        "clause_id": "6",
+        "clause_title": "Severability",
+        "risk_level": "LOW",
+        "matched_rules": [],
+        "risk_count": 0
+      },
+      {
+        "clause_id": "7",
+        "clause_title": "Integration",
+        "risk_level": "LOW",
+        "matched_rules": [],
+        "risk_count": 0
+      },
+      {
+        "clause_id": "8",
+        "clause_title": "Waiver",
+        "risk_level": "LOW",
+        "matched_rules": [],
+        "risk_count": 0
+      },
+      {
+        "clause_id": "9",
+        "clause_title": "Notice",
+        "risk_level": "HIGH",
+        "matched_rules": [
+          {
+            "rule_id": "LIAB001",
+            "name": "Unlimited Liability",
+            "risk_level": "HIGH",
+            "description": "Unlimited liability exposure",
+            "why_risky": "A single incident could result in catastrophic financial loss with no upper bound.",
+            "recommendation": "Insist on a liability cap (typically 1-2x annual contract fees or specific dollar amount).",
+            "redline_suggestion": "Add: 'Except for gross negligence or willful misconduct, each party's total liability shall not exceed the greater of (i) the fees paid in the 12 months preceding the claim or (ii) $[amount].'",
+            "example_clauses": [],
+            "contract_scope": [],
+            "perspective_scope": []
+          }
+        ],
+        "risk_count": 1
+      }
+    ],
+    "all_flagged_rules": [
+      {
+        "rule_id": "LIAB001",
+        "name": "Unlimited Liability",
+        "risk_level": "HIGH",
+        "description": "Unlimited liability exposure",
+        "why_risky": "A single incident could result in catastrophic financial loss with no upper bound.",
+        "recommendation": "Insist on a liability cap (typically 1-2x annual contract fees or specific dollar amount).",
+        "redline_suggestion": "Add: 'Except for gross negligence or willful misconduct, each party's total liability shall not exceed the greater of (i) the fees paid in the 12 months preceding the claim or (ii) $[amount].'",
+        "example_clauses": [],
+        "contract_scope": [],
+        "perspective_scope": []
+      }
+    ],
+    "context": {
+      "contract_type": "nda",
+      "perspective": "vendor"
+    }
+  },
+  "explanations": {
+    "context": {
+      "contract_type": "nda",
+      "perspective": "vendor"
+    },
+    "overall_risk_level": "MEDIUM",
+    "executive_summary": "\u26a1 **MEDIUM RISK** - This contract has some concerning terms that should be reviewed and potentially negotiated. Consider consulting a lawyer.",
+    "contract_summary": "\u26a1 **MEDIUM RISK** - This contract has some concerning terms that should be reviewed and potentially negotiated. Consider consulting a lawyer.",
+    "statistics": {
+      "total_clauses": 5,
+      "high_risk": 1,
+      "medium_risk": 0,
+      "low_risk": 4,
+      "total_issues": 1
+    },
+    "risky_clauses": [
+      {
+        "clause_id": "9",
+        "clause_title": "Notice",
+        "risk_level": "HIGH",
+        "summary": "\ud83d\udea8 CRITICAL: This 'Notice' clause contains HIGH RISK terms that require immediate attention.",
+        "issues": [
+          {
+            "rule_id": "LIAB001",
+            "severity": "HIGH",
+            "issue": "Unlimited liability exposure",
+            "what_it_means": "Unlimited liability exposure",
+            "why_its_risky": "A single incident could result in catastrophic financial loss with no upper bound.",
+            "contract_scope": [],
+            "perspective_scope": []
+          }
+        ],
+        "recommendations": [
+          {
+            "rule_id": "LIAB001",
+            "action": "Insist on a liability cap (typically 1-2x annual contract fees or specific dollar amount)."
+          }
+        ],
+        "redlines": [
+          {
+            "rule_id": "LIAB001",
+            "suggestion": "Add: 'Except for gross negligence or willful misconduct, each party's total liability shall not exceed the greater of (i) the fees paid in the 12 months preceding the claim or (ii) $[amount].'",
+            "example_wording": "Example wording: Add: 'Except for gross negligence or willful misconduct, each party's total liability shall not exceed the greater of (i) the fees paid in the 12 months preceding the claim or (ii) $[amount].'",
+            "type": "replacement"
+          }
+        ],
+        "examples": []
+      }
+    ],
+    "overall_recommendations": [
+      "\u26a0\ufe0f Strongly consider legal counsel to address high-risk terms.",
+      "Remember: the other party drafted this contract to favor their interests. It's normal and expected to negotiate changes.",
+      "Use the redline suggestions below as negotiation points.",
+      "Document all negotiated changes in writing before signing.",
+      "Consider requesting a side letter addressing the flagged issues."
+    ],
+    "suggested_redlines": [
+      {
+        "rule_id": "LIAB001",
+        "suggestion": "Add: 'Except for gross negligence or willful misconduct, each party's total liability shall not exceed the greater of (i) the fees paid in the 12 months preceding the claim or (ii) $[amount].'",
+        "example_wording": "Example wording: Add: 'Except for gross negligence or willful misconduct, each party's total liability shall not exceed the greater of (i) the fees paid in the 12 months preceding the claim or (ii) $[amount].'",
+        "type": "replacement",
+        "clause_id": "9",
+        "clause_title": "Notice"
+      }
+    ],
+    "example_clauses": []
+  },
+  "summary": {
+    "total_clauses": 5,
+    "clause_type_breakdown": {
+      "GENERAL": 2,
+      "SEVERABILITY": 1,
+      "WARRANTY": 1,
+      "CONFIDENTIALITY": 1
+    },
+    "contract_entities": {
+      "money": [],
+      "dates": [],
+      "durations": [],
+      "parties": [
+        "DISCLOSING PARTY",
+        "employee",
+        "Employee",
+        "employer",
+        "RECEIVING PARTY"
+      ],
+      "locations": [
+        "indirectly, or"
+      ]
+    },
+    "risk_summary": {
+      "overall_risk": "MEDIUM",
+      "high_risk_count": 1,
+      "medium_risk_count": 0,
+      "total_issues": 1,
+      "context": {
+        "contract_type": "nda",
+        "perspective": "vendor"
+      }
+    }
+  }
+}
