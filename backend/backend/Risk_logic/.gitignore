@@ -1,0 +1,86 @@
+####################################
+# OS / Editor
+####################################
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+####################################
+# Python
+####################################
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+ENV/
+env/
+.backend_venv/
+backend/venv/
+
+# Python tooling
+.pytest_cache/
+.mypy_cache/
+.pyre/
+.coverage
+htmlcov/
+
+####################################
+# Environment variables
+####################################
+.env
+.env.*
+!.env.example
+
+####################################
+# Node / React / Vite
+####################################
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite
+dist/
+.vite/
+
+####################################
+# Build outputs
+####################################
+build/
+out/
+
+####################################
+# Logs
+####################################
+*.log
+
+####################################
+# Git
+####################################
+.git/
+.gitmodules
+
+####################################
+# Temporary / cache files
+####################################
+*.tmp
+*.temp
+*.swp
+*.swo
+
+####################################
+# IDE specific
+####################################
+*.iml
+*.ipr
+*.iws
