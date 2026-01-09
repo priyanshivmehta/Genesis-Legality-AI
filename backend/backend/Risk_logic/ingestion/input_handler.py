@@ -1,4 +1,5 @@
-# ingestion/input_handler.py
+# backend/backend/Risk_logic/ingestion/input_handler.py
+
 """
 Input Handler - Main entry point for document ingestion
 """
@@ -7,6 +8,29 @@ from .pdf_handler import extract_text_from_pdf
 from .docx_handler import extract_text_from_docx
 from .image_handler import extract_text_from_image
 from .cleaner import clean_text
+
+def _is_valid_extracted_text(text: str) -> bool:
+    """
+    Validate that extracted text is usable for analysis.
+    
+    Args:
+        text: Extracted text to validate
+        
+    Returns:
+        True if text is valid
+    """
+    if not text or not text.strip():
+        return False
+    
+    # Check for PDF binary markers
+    if text.strip().startswith('%PDF'):
+        return False
+    
+    # Must have minimum content length
+    if len(text.strip()) < 50:
+        return False
+    
+    return True
 
 def ingest_contract(file_path: str = None, pasted_text: str = None):
     """
@@ -17,7 +41,7 @@ def ingest_contract(file_path: str = None, pasted_text: str = None):
         pasted_text: Direct text paste
         
     Returns:
-        Dict with 'text' and 'metadata'
+        Dict with 'text', 'metadata', and 'success' flag
     """
     metadata = {
         "source": None,
@@ -51,7 +75,28 @@ def ingest_contract(file_path: str = None, pasted_text: str = None):
     else:
         raise ValueError("No contract input provided")
 
+    # Validate extracted text
+    if not _is_valid_extracted_text(raw_text):
+        print("❌ Text extraction failed - invalid or empty content")
+        return {
+            "text": "",
+            "metadata": metadata,
+            "success": False
+        }
+
+    cleaned_text = clean_text(raw_text)
+    
+    # Validate cleaned text
+    if not _is_valid_extracted_text(cleaned_text):
+        print("❌ Text cleaning resulted in invalid content")
+        return {
+            "text": "",
+            "metadata": metadata,
+            "success": False
+        }
+
     return {
-        "text": clean_text(raw_text),
-        "metadata": metadata
+        "text": cleaned_text,
+        "metadata": metadata,
+        "success": True
     }

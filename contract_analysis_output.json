@@ -1,0 +1,63 @@
+{
+  "status": "PARSE_FAILED",
+  "message": "Unable to reliably parse contract clauses. Please review manually.",
+  "schema_version": "1.0",
+  "context": {
+    "contract_type": "nda",
+    "perspective": "vendor"
+  },
+  "clauses": [],
+  "risk_analysis": {
+    "overall_risk": "UNKNOWN",
+    "total_clauses": 0,
+    "high_risk_clauses": 0,
+    "medium_risk_clauses": 0,
+    "low_risk_clauses": 0,
+    "clause_analyses": [],
+    "all_flagged_rules": [],
+    "context": {
+      "contract_type": "nda",
+      "perspective": "vendor"
+    }
+  },
+  "explanations": {
+    "overall_risk_level": "UNKNOWN",
+    "executive_summary": "\u26a0\ufe0f Contract parsing failed. Manual review required.",
+    "statistics": {
+      "total_clauses": 0,
+      "high_risk": 0,
+      "medium_risk": 0,
+      "low_risk": 0,
+      "total_issues": 0
+    },
+    "risky_clauses": [],
+    "overall_recommendations": [
+      "Contract structure could not be parsed automatically.",
+      "This may indicate an unusual format or OCR issues.",
+      "Manual legal review is strongly recommended."
+    ],
+    "suggested_redlines": [],
+    "example_clauses": []
+  },
+  "summary": {
+    "total_clauses": 0,
+    "clause_type_breakdown": {},
+    "contract_entities": {
+      "money": [],
+      "dates": [],
+      "durations": [],
+      "parties": [],
+      "locations": []
+    },
+    "risk_summary": {
+      "overall_risk": "UNKNOWN",
+      "high_risk_count": 0,
+      "medium_risk_count": 0,
+      "total_issues": 0,
+      "context": {
+        "contract_type": "nda",
+        "perspective": "vendor"
+      }
+    }
+  }
+}

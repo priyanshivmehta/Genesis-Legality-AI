@@ -263,10 +263,10 @@
       "durations": [],
       "parties": [
         "DISCLOSING PARTY",
-        "employee",
-        "Employee",
         "employer",
-        "RECEIVING PARTY"
+        "RECEIVING PARTY",
+        "employee",
+        "Employee"
       ],
       "locations": [
         "indirectly, or"

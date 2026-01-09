@@ -97,53 +97,72 @@ export default function ClauseAccordion({
                     />
                   </button>
 
-                  {isExpanded && (
-                    <div className="border-t border-gray-200 p-6 space-y-6 bg-gray-50">
-                      <div>
-                        <div className="flex items-center space-x-2 mb-3">
-                          <div
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${risk.bgColor} ${risk.color}`}
-                          >
-                            <RiskIcon className="w-4 h-4 mr-1.5" />
-                            {risk.label}
-                          </div>
-                        </div>
-                      </div>
+                  
 
-                      <div>
-                        <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
-                          Quote from Contract
-                        </h4>
-                        <div className="bg-white border-l-4 border-gray-300 p-4 rounded-r-md">
-                          <p className="text-sm text-gray-700 italic leading-relaxed">
-                            "{insight.quote}"
-                          </p>
-                        </div>
-                      </div>
+{isExpanded && (
+  <div className="border-t border-gray-200 p-6 space-y-6 bg-gray-50">
+    <div>
+      <div className="flex items-center space-x-2 mb-3">
+        <div
+          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${risk.bgColor} ${risk.color}`}
+        >
+          <RiskIcon className="w-4 h-4 mr-1.5" />
+          {risk.label}
+        </div>
+      </div>
+    </div>
 
-                      <div>
-                        <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
-                          AI Insight
-                        </h4>
-                        <div className="bg-white border border-gray-200 p-4 rounded-md">
-                          <p className="text-sm text-gray-800 leading-relaxed">
-                            {insight.insight}
-                          </p>
-                        </div>
-                      </div>
+    {/* Only render quote if it exists and is valid */}
+    {insight.quote && insight.quote.trim().length > 0 && (
+      <div>
+        <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+          Quote from Contract
+        </h4>
+        <div className="bg-white border-l-4 border-gray-300 p-4 rounded-r-md">
+          <p className="text-sm text-gray-700 italic leading-relaxed">
+            "{insight.quote}"
+          </p>
+        </div>
+      </div>
+    )}
 
-                      <div>
-                        <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
-                          Suggested Change
-                        </h4>
-                        <div className="bg-green-50 border-2 border-green-200 p-4 rounded-md">
-                          <p className="text-sm text-gray-800 leading-relaxed">
-                            {insight.suggestedChange}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+    {/* Show fallback if quote is missing */}
+    {(!insight.quote || insight.quote.trim().length === 0) && (
+      <div>
+        <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+          Quote from Contract
+        </h4>
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-md">
+          <p className="text-sm text-gray-600 italic">
+            Unable to extract readable text for this clause.
+          </p>
+        </div>
+      </div>
+    )}
+
+    <div>
+      <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+        AI Insight
+      </h4>
+      <div className="bg-white border border-gray-200 p-4 rounded-md">
+        <p className="text-sm text-gray-800 leading-relaxed">
+          {insight.insight}
+        </p>
+      </div>
+    </div>
+
+    <div>
+      <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+        Suggested Change
+      </h4>
+      <div className="bg-green-50 border-2 border-green-200 p-4 rounded-md">
+        <p className="text-sm text-gray-800 leading-relaxed">
+          {insight.suggestedChange}
+        </p>
+      </div>
+    </div>
+  </div>
+)}
                 </div>
               );
             })}
