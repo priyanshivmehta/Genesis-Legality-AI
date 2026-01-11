@@ -1,10 +1,17 @@
 """
 Explainability Layer
 Generates plain-English explanations with redline suggestions and examples.
-LLMs are used ONLY for optional language polishing, never for legal decisions.
+
+CRITICAL ARCHITECTURE:
+- Rules return StructuredRiskObject with signals (boolean facts)
+- LLMResponseHandler calls OpenAI with fact-driven prompts
+- LLM explains detected facts, does NOT invent risks
+- Fallback to rule defaults if LLM unavailable
+- Never use LLM for legal decisions, only explanations
 """
 
 from typing import Callable, Dict, List, Optional
+from explainability.llm_handler import LLMResponseHandler
 
 
 class RiskExplainer:
@@ -116,18 +123,8 @@ class RiskExplainer:
     ):
         self.llm_client = llm_client
         self.tone = tone
-
-    # ------------------------------------------------------------------
-    # Internal helper: safe LLM rewrite
-    # ------------------------------------------------------------------
-    def _llm_rewrite(self, prompt: str, fallback: str) -> str:
-        if not self.llm_client:
-            return fallback
-        try:
-            rewritten = self.llm_client(prompt)
-            return rewritten.strip() if rewritten else fallback
-        except Exception:
-            return fallback
+        # Use new LLM handler for fact-driven prompts and structured responses
+        self.llm_handler = LLMResponseHandler(openai_client=llm_client)
 
     # ------------------------------------------------------------------
     # Get perspective-aware explanation
@@ -153,6 +150,12 @@ class RiskExplainer:
     def explain_clause_risk(
         self, clause_analysis: Dict, clause: Dict, context: Optional[Dict] = None
     ) -> Dict:
+        """
+        Explain risks in a clause using fact-driven LLM with fallback.
+        
+        CRITICAL: LLM receives StructuredRiskObject with signals (facts),
+        not conclusions. LLM explains detected facts only.
+        """
         risk_level = clause_analysis["risk_level"]
         matched_rules = clause_analysis.get("matched_rules", [])
         perspective = context.get("perspective") if context else None
@@ -184,81 +187,84 @@ class RiskExplainer:
                 f"✓ This '{clause.get('title')}' clause appears standard with LOW RISK."
             )
 
-        # Explain each triggered rule with perspective-aware framing
+        # Explain each triggered rule using fact-driven LLM
         for rule in matched_rules:
             rule_id = rule["rule_id"]
-            base_issue = rule["description"]
-            base_risk = rule["why_risky"]
-
-            # Get perspective-specific explanations if available
-            default_what = base_issue
-            default_why = base_risk
             
-            perspective_what = self._get_perspective_explanation(
-                rule_id, "what_it_means", perspective, default_what
-            )
-            perspective_why = self._get_perspective_explanation(
-                rule_id, "why_risky", perspective, default_why
+            # Extract StructuredRiskObject if available (new path)
+            # Otherwise use dict (backwards compatible)
+            if "_structured_object" in rule:
+                structured_risk = rule["_structured_object"]
+                if isinstance(structured_risk, dict):
+                    structured_risk_dict = structured_risk
+                else:
+                    structured_risk_dict = structured_risk.to_dict()
+            else:
+                # Backwards compatibility: convert dict to structured form
+                structured_risk_dict = {
+                    "rule_id": rule.get("rule_id"),
+                    "rule_name": rule.get("name", rule.get("rule_name")),
+                    "risk_level": rule.get("risk_level"),
+                    "legal_category": rule.get("contract_scope", ["GENERAL"])[0] if rule.get("contract_scope") else "GENERAL",
+                    "signals": rule.get("signals", {}),
+                    "clause_excerpt": rule.get("clause_excerpt", rule.get("matched_text", "")),
+                    "description": rule.get("description"),
+                    "why_risky": rule.get("why_risky"),
+                    "recommendation": rule.get("recommendation"),
+                    "redline_suggestion": rule.get("redline_suggestion"),
+                }
+
+            # Use fact-driven LLM to explain this risk
+            llm_explanation = self.llm_handler.explain_risk_with_llm(
+                structured_risk_dict, context
             )
 
-            # Optional LLM polishing (only if enabled)
-            plain_issue = self._llm_rewrite(
-                f"Rewrite this for a non-lawyer in plain English. "
-                f"Tone: {self.tone}. Text: {perspective_what}",
-                perspective_what,
-            )
-
-            plain_risk = self._llm_rewrite(
-                f"Rewrite why this is risky for a non-lawyer in plain English. "
-                f"Tone: {self.tone}. Text: {perspective_why}",
-                perspective_why,
-            )
-
+            # Add issue explanation
             explanation["issues"].append(
                 {
-                    "rule_id": rule["rule_id"],
+                    "rule_id": rule_id,
                     "severity": rule["risk_level"],
-                    "issue": base_issue,
-                    "what_it_means": plain_issue,
-                    "why_its_risky": plain_risk,
+                    "issue": rule.get("description", "Risk detected"),
+                    "summary": llm_explanation.get("summary", ""),
+                    "why_risky": llm_explanation.get("why_risky", ""),
+                    "what_triggers": llm_explanation.get("what_triggers", []),
                     "contract_scope": rule.get("contract_scope"),
                     "perspective_scope": rule.get("perspective_scope"),
+                    "llm_source": llm_explanation.get("source", "fallback"),
                 }
             )
 
+            # Add recommendation
             explanation["recommendations"].append(
                 {
-                    "rule_id": rule["rule_id"],
-                    "action": rule["recommendation"],
+                    "rule_id": rule_id,
+                    "action": rule.get("recommendation", "Address this risk"),
                 }
             )
 
+            # Add redline suggestion
             if rule.get("redline_suggestion"):
-                base_redline = rule["redline_suggestion"]
-                example_wording = self._llm_rewrite(
-                    f"Rewrite this negotiation-friendly example wording. "
-                    f"Label it clearly as example wording. "
-                    f"Tone: {self.tone}. Text: {base_redline}",
-                    base_redline,
-                )
-
                 explanation["redlines"].append(
                     {
-                        "rule_id": rule["rule_id"],
-                        "suggestion": base_redline,
-                        "example_wording": f"Example wording: {example_wording}",
-                        "type": "replacement",  # or addition / deletion
+                        "rule_id": rule_id,
+                        "suggestion": rule.get("redline_suggestion"),
+                        "example_wording": llm_explanation.get("example_wording", rule.get("redline_suggestion")),
+                        "type": "replacement",
                     }
                 )
 
+            # Add example clauses if available
             if rule.get("example_clauses"):
                 explanation["examples"].extend(
                     {
-                        "rule_id": rule["rule_id"],
+                        "rule_id": rule_id,
                         "text": ex,
                     }
                     for ex in rule["example_clauses"]
                 )
+
+        return explanation
+
 
         return explanation
 
@@ -271,6 +277,9 @@ class RiskExplainer:
         clauses: List[Dict],
         context: Dict,
     ) -> Dict:
+        """
+        Explain overall contract risk using fact-driven LLM.
+        """
         overall_risk = contract_analysis["overall_risk"]
 
         clause_explanations = []
@@ -312,35 +321,24 @@ class RiskExplainer:
                     }
                 )
 
-        # Optional LLM contract summary
-        stats = {
-            "high_risk": contract_analysis["high_risk_clauses"],
-            "medium_risk": contract_analysis["medium_risk_clauses"],
-            "low_risk": contract_analysis["low_risk_clauses"],
-        }
+        # Use LLM handler to create contract-level summary from detected rules
+        high_risk_rules = contract_analysis.get("all_flagged_rules", [])
+        high_risk_rules = [r for r in high_risk_rules if r.get("risk_level") == "HIGH"]
+        
+        medium_risk_rules = [r for r in contract_analysis.get("all_flagged_rules", [])
+                            if r.get("risk_level") == "MEDIUM"]
 
-        summary_prompt = (
-            "Summarize these contract risks for a non-lawyer. "
-            "Do NOT give legal advice. "
-            f"Tone: {self.tone}. "
-            f"Overall risk: {overall_risk}. "
-            f"Context: {context.get('contract_type')} from {context.get('perspective')} perspective. "
-            f"High: {stats['high_risk']}, "
-            f"Medium: {stats['medium_risk']}, "
-            f"Low: {stats['low_risk']}. "
-            f"Key clauses: {[exp['clause_title'] for exp in clause_explanations][:5]}"
-        )
-
-        llm_summary = self._llm_rewrite(
-            summary_prompt,
-            self.RISK_LEVEL_SUMMARY[overall_risk],
+        contract_summary = self.llm_handler.create_contract_summary_with_llm(
+            high_risk_rules,
+            medium_risk_rules,
+            context,
         )
 
         return {
             "context": context,
             "overall_risk_level": overall_risk,
             "executive_summary": self.RISK_LEVEL_SUMMARY[overall_risk],
-            "contract_summary": llm_summary,
+            "contract_summary": contract_summary,
             "statistics": {
                 "total_clauses": contract_analysis["total_clauses"],
                 "high_risk": contract_analysis["high_risk_clauses"],

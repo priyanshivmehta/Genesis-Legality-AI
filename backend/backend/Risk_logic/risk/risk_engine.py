@@ -2,12 +2,105 @@
 """
 Perspective-aware Risk Analysis Engine with Playbook Support
 Evaluates contract clauses for legal risks with customizable, rule-based logic.
+
+CRITICAL ARCHITECTURE:
+This engine enforces Rule → Facts → LLM pipeline.
+- Rules detect and return STRUCTURED risk objects with signals (boolean facts)
+- Facts are never assumptions, always derived from matched text
+- LLM receives facts, not conclusions
+- LLM explains why detected facts are risky, not invents new risks
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import re
 import json
 import os
+
+
+class StructuredRiskObject:
+    """
+    Structured representation of a detected risk rule with factual signals.
+    
+    This object enforces the Rule → Facts → LLM pipeline:
+    - rule_id, name, risk_level: identification and severity
+    - signals: boolean facts about what was detected (NOT conclusions)
+    - clause_excerpt: the actual matched text from the contract
+    - legal_category: classification for grouping related risks
+    
+    Example:
+    {
+        "rule_id": "TERM001",
+        "rule_name": "At-Will Termination",
+        "risk_level": "HIGH",
+        "legal_category": "Employment termination",
+        "signals": {
+            "at_will": True,
+            "auto_renewal": True,
+            "no_severance": True,
+            "no_notice_required": True,
+            "employee_rights_waived": True
+        },
+        "clause_excerpt": "The Executive's Employment shall be at will..."
+    }
+    """
+    def __init__(
+        self,
+        rule_id: str,
+        rule_name: str,
+        risk_level: str,
+        legal_category: str,
+        signals: Dict[str, Any],
+        clause_excerpt: str,
+        matched_text: Optional[str] = None,
+        description: str = "",
+        why_risky: str = "",
+        recommendation: str = "",
+        redline_suggestion: Optional[str] = None,
+    ):
+        self.rule_id = rule_id
+        self.rule_name = rule_name
+        self.risk_level = risk_level
+        self.legal_category = legal_category
+        self.signals = signals  # Boolean facts about what was detected
+        self.clause_excerpt = clause_excerpt
+        self.matched_text = matched_text or clause_excerpt
+        self.description = description
+        self.why_risky = why_risky
+        self.recommendation = recommendation
+        self.redline_suggestion = redline_suggestion
+
+    def to_dict(self) -> Dict:
+        """Serialize to dictionary for JSON output and LLM processing."""
+        return {
+            "rule_id": self.rule_id,
+            "rule_name": self.rule_name,
+            "risk_level": self.risk_level,
+            "legal_category": self.legal_category,
+            "signals": self.signals,
+            "clause_excerpt": self.clause_excerpt,
+            "matched_text": self.matched_text,
+            "description": self.description,
+            "why_risky": self.why_risky,
+            "recommendation": self.recommendation,
+            "redline_suggestion": self.redline_suggestion,
+        }
+
+    @staticmethod
+    def from_dict(data: Dict) -> "StructuredRiskObject":
+        """Deserialize from dictionary."""
+        return StructuredRiskObject(
+            rule_id=data.get("rule_id"),
+            rule_name=data.get("rule_name"),
+            risk_level=data.get("risk_level"),
+            legal_category=data.get("legal_category"),
+            signals=data.get("signals", {}),
+            clause_excerpt=data.get("clause_excerpt", ""),
+            matched_text=data.get("matched_text"),
+            description=data.get("description", ""),
+            why_risky=data.get("why_risky", ""),
+            recommendation=data.get("recommendation", ""),
+            redline_suggestion=data.get("redline_suggestion"),
+        )
 
 
 class RiskRule:
@@ -82,6 +175,44 @@ class RiskRule:
             if pattern.search(text):
                 return True
         return False
+
+    def extract_signals(self, text: str) -> Dict[str, bool]:
+        """
+        Extract boolean signals (factual signals) about what was detected.
+        Each signal represents a concrete fact found in the text, not a conclusion.
+        
+        Default: returns empty dict. Subclasses or specific rules override this
+        to return rule-specific signals.
+        
+        Example signals:
+        - "unlimited_liability": True  (found "unlimited" + "liability")
+        - "no_cap": True  (no cap on liability found)
+        - "auto_renewal": True  (found automatic renewal language)
+        """
+        # Default implementation: detect patterns found
+        signals = {}
+        for i, pattern in enumerate(self.patterns):
+            signal_key = f"pattern_{i}_matched"
+            signals[signal_key] = bool(pattern.search(text))
+        return signals
+
+    def get_matched_excerpt(self, text: str, max_length: int = 500) -> str:
+        """
+        Extract the portion of text that matched this rule's patterns.
+        Used as clause_excerpt in StructuredRiskObject.
+        """
+        for pattern in self.patterns:
+            match = pattern.search(text)
+            if match:
+                start = max(0, match.start() - 50)
+                end = min(len(text), match.end() + 450)
+                excerpt = text[start:end].strip()
+                if start > 0:
+                    excerpt = "..." + excerpt
+                if end < len(text):
+                    excerpt = excerpt + "..."
+                return excerpt
+        return text[:max_length]  # Fallback: return first max_length chars
 
 
 class RiskEngine:
@@ -492,6 +623,9 @@ class RiskEngine:
     ) -> Dict:
         """
         Analyze a single clause against all rules, honoring contract_type and perspective.
+        
+        CRITICAL: Returns matched_rules as list of StructuredRiskObject dicts.
+        Each rule includes factual signals about what was detected.
         """
         text = clause.get("text", "")
         clause_types = clause.get("types", ["GENERAL"])
@@ -504,20 +638,38 @@ class RiskEngine:
                 adjusted_risk = rule.get_risk_level(perspective)
                 adjusted_description = rule.get_description(perspective)
                 
-                matched_rules.append(
-                    {
-                        "rule_id": rule.rule_id,
-                        "name": rule.name,
-                        "risk_level": adjusted_risk,
-                        "description": adjusted_description,
-                        "why_risky": rule.why_risky,
-                        "recommendation": rule.recommendation,
-                        "redline_suggestion": rule.redline_suggestion,
-                        "example_clauses": rule.example_clauses,
-                        "contract_scope": rule.contract_types,
-                        "perspective_scope": rule.perspectives,
-                    }
+                # Extract factual signals about what was detected
+                signals = rule.extract_signals(text)
+                
+                # Get matched excerpt from contract text
+                matched_excerpt = rule.get_matched_excerpt(text)
+                
+                # Determine legal category based on clause types and rule
+                legal_category = clause_types[0] if clause_types else "GENERAL"
+                
+                # Create StructuredRiskObject
+                structured_risk = StructuredRiskObject(
+                    rule_id=rule.rule_id,
+                    rule_name=rule.name,
+                    risk_level=adjusted_risk,
+                    legal_category=legal_category,
+                    signals=signals,
+                    clause_excerpt=matched_excerpt,
+                    matched_text=matched_excerpt,
+                    description=adjusted_description,
+                    why_risky=rule.why_risky,
+                    recommendation=rule.recommendation,
+                    redline_suggestion=rule.redline_suggestion,
                 )
+                
+                # Keep both structured object and dict for compatibility
+                matched_rules.append({
+                    **structured_risk.to_dict(),
+                    "example_clauses": rule.example_clauses,
+                    "contract_scope": rule.contract_types,
+                    "perspective_scope": rule.perspectives,
+                    "_structured_object": structured_risk,  # Keep object reference for LLM processing
+                })
 
         risk_levels = [r["risk_level"] for r in matched_rules]
         if "HIGH" in risk_levels:

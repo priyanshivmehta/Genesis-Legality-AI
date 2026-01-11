@@ -1,6 +1,12 @@
 # intelligence/contract_analyzer.py
 """
 Enhanced Contract Analyzer with Playbook Support and perspective/context handling
+
+CRITICAL ARCHITECTURE:
+- Rules return StructuredRiskObject with signals (boolean facts)
+- Facts flow through pipeline: Rule → Risk Engine → Explainer → LLM Handler
+- LLM never invents risks, only explains detected facts
+- Fallback to rule defaults if LLM unavailable
 """
 
 from typing import Dict, List, Optional, Callable
@@ -16,6 +22,25 @@ from classification.clause_classifier import ClauseClassifier
 from ner.entity_extractor import EntityExtractor
 from risk.risk_engine import RiskEngine
 from explainability.explainer import RiskExplainer
+from explainability.llm_handler import LLMResponseHandler
+
+
+def flatten_clauses_for_analysis(clauses_tree):
+    """
+    Convert nested clause tree to flat list for risk analysis.
+    Includes both top-level and subclauses.
+    """
+    flat_list = []
+    
+    for clause in clauses_tree:
+        # Add top-level clause
+        flat_list.append(clause)
+        
+        # Add all subclauses
+        for subclause in clause.get("subclauses", []):
+            flat_list.append(subclause)
+    
+    return flat_list
 
 
 class ContractAnalyzer:
@@ -102,8 +127,11 @@ class ContractAnalyzer:
             }
 
         # ---- ENRICH CLAUSES ----
+        # Flatten clause tree to include all clauses and subclauses for analysis
+        flat_clauses = flatten_clauses_for_analysis(clauses)
+        
         enriched_clauses = []
-        for clause in clauses:
+        for clause in flat_clauses:
             text = clause.get("text", "")
             title = clause.get("title", "")
 

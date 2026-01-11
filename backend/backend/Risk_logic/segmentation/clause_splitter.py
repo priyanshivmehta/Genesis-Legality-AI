@@ -1,160 +1,232 @@
 # segmentation/clause_splitter.py
 """
-Clause Segmentation Module
-Splits contract text into individual clauses with structure preservation
+Clause Segmentation with Tree Building
+
+Two-stage parsing:
+  Stage A: Scan all lines and detect heading boundaries
+  Stage B: Build clause tree with parent-child relationships
+
+Subclauses (2.1, 2.2) are nested under parent (2).
+Only top-level clauses are returned.
 """
 
-from .patterns import is_clause_heading
+import re
+from .patterns import (
+    CLAUSE_HEADING_REGEX,
+    is_valid_heading,
+    extract_clause_number_and_title,
+    get_parent_clause_id,
+    is_subclause,
+    count_sentences,
+)
+
+# ============================================================================
+# LINE FILTERING
+# ============================================================================
 
 FOOTER_KEYWORDS = [
     "Copyright ©",
     "All Rights Reserved",
     "Page ",
-    "Confidential",
 ]
 
-SENTENCE_END_CHARS = (".", "?", "!", ";", ":")
 
-
-def strip_footer_noise(line: str) -> str:
-    """Remove common footer elements from lines."""
+def is_noise_line(line: str) -> bool:
+    """Check if a line is footer/header noise (very strict)."""
+    if not line or len(line.strip()) < 3:
+        return True
+    # Only match exact footer patterns
     for keyword in FOOTER_KEYWORDS:
         if keyword in line:
-            parts = line.split(keyword)
-            if len(parts) > 1:
-                return parts[-1].strip()
-            return ""
-    return line
+            return True
+    # Very short lines like page numbers "1" or "- 1 -"
+    if len(line.strip()) <= 5 and line.strip().replace("-", "").replace(".", "").isdigit():
+        return True
+    return False
 
 
-def merge_wrapped_lines(text: str) -> str:
+# ============================================================================
+# TWO-STAGE CLAUSE PARSING
+# ============================================================================
+
+def find_all_headings(text: str) -> list:
     """
-    Merge soft-wrapped lines (common in PDFs/OCR) while keeping paragraph breaks.
+    Stage A: Scan text and find all valid clause headings.
+    
+    Returns list of (line_index, line_text, clause_id, title)
     """
-    lines = [strip_footer_noise(l).strip() for l in text.splitlines()]
-    merged = []
-    buffer = ""
-
-    for line in lines:
-        if not line:
-            if buffer:
-                merged.append(buffer.strip())
-                buffer = ""
-            merged.append("")  # preserve blank line as paragraph break
+    headings = []
+    lines = text.split('\n')
+    
+    for i, line in enumerate(lines):
+        if is_noise_line(line):
             continue
-
-        if buffer:
-            if not buffer.endswith(SENTENCE_END_CHARS) and line[:1].islower():
-                buffer += " " + line
-            else:
-                merged.append(buffer.strip())
-                buffer = line
-        else:
-            buffer = line
-
-    if buffer:
-        merged.append(buffer.strip())
-
-    return "\n".join(merged)
-
-
-    def fallback_segment(text: str):
-        """
-        Fallback segmentation when no headings detected.
-        Splits by paragraphs or sentences as a last resort.
-        """
-        paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+        
+        if is_valid_heading(line):
+            clause_id, title = extract_clause_number_and_title(line)
+            if clause_id and title:
+                headings.append((i, line, clause_id, title))
     
-        if not paragraphs:
-            # Try splitting by single newlines
-            paragraphs = [p.strip() for p in text.split("\n") if p.strip() and len(p.strip()) > 50]
-    
-        if not paragraphs:
-            # Last resort: treat entire text as one clause
-            return [{
-                "id": "1",
-                "title": "Contract",
-                "text": text.strip()
-            }] if text.strip() else []
-    
-        clauses = []
-        for i, para in enumerate(paragraphs[:20], 1):  # Limit to 20 paragraphs
-            if len(para) > 30:  # Skip very short paragraphs
-                clauses.append({
-                    "id": str(i),
-                    "title": f"Section {i}",
-                    "text": para
-                })
-    
-        return clauses if clauses else [{
-            "id": "1",
-            "title": "Contract",
-            "text": text.strip()
-        }]
+    return headings
 
 
-def segment_clauses(text: str):
+def build_clause_tree(text: str) -> list:
     """
-    Segment contract text into distinct clauses.
-
-    Uses pattern matching to identify clause headings and boundaries.
-    Preserves clause numbering and titles.
-
-    Args:
-        text: Clean contract text
-
-    Returns:
-        List of clause dictionaries with 'id', 'title', 'text'
+    Stage B: Build clause tree with subclauses nested under parents.
+    
+    Returns list of top-level clause dicts:
+      {
+        "id": "2",
+        "title": "Restrictions on Disclosure and Use",
+        "text": "...",
+        "subclauses": [
+          { "id": "2.1", "title": "Non-disclosure", "text": "..." },
+          ...
+        ]
+      }
     """
     if not text or not text.strip():
         return []
     
-    clauses = []
-    current_clause = None
-    detected_any_heading = False
-
-    # Pre-merge wrapped lines to reduce false splits
-    normalized_text = merge_wrapped_lines(text)
-
-    # Token-level scanning for better heading detection
-    tokens = normalized_text.split()
-    buffer = ""
-
-    for token in tokens:
-        buffer += token + " "
-
-        # Try detecting a clause heading in the buffer
-        is_heading, info = is_clause_heading(buffer.strip())
-
-        # Guard against footer/page artifacts posing as headings
-        title = (info.get("title") or "").strip()
-        if is_heading and title.upper().startswith("PAGE"):
-            is_heading = False
-            info = {}
-
-        if is_heading:
-            if current_clause:
-                current_clause["text"] = current_clause["text"].strip()
-                clauses.append(current_clause)
-
-            current_clause = {
-                "id": info.get("num", ""),
-                "title": title.split(".")[0].strip(),
-                "text": ""
-            }
-
-            buffer = ""  # reset buffer after clause start
-
-        else:
-            if current_clause:
-                current_clause["text"] += token + " "
-
-    if current_clause:
-        current_clause["text"] = current_clause["text"].strip()
-        clauses.append(current_clause)
-
-    # Fallback segmentation if no headings detected
-    if not clauses or len(clauses) == 0:
-        clauses = fallback_segment(normalized_text)
+    lines = text.split('\n')
+    headings = find_all_headings(text)
     
-    return clauses
+    if not headings:
+        # Fallback: return text as single clause
+        return [{
+            "id": "1",
+            "title": "Contract",
+            "text": text.strip(),
+            "subclauses": []
+        }]
+    
+    clauses = {}  # {clause_id: clause_dict}
+    
+    # Process each heading and extract text until next heading
+    for idx, (line_index, heading_line, clause_id, title) in enumerate(headings):
+        # Find start of body text
+        # Either rest of current line or next non-empty line
+        body_start_line = line_index + 1
+        
+        # Extract body text (everything until next heading)
+        body_lines = []
+        
+        # Check if there's body text after the heading on the same line
+        match = CLAUSE_HEADING_REGEX.match(heading_line.strip())
+        if match:
+            end_pos = match.end()
+            remainder = heading_line[end_pos:].strip()
+            if remainder and remainder[0] not in '.:,':
+                body_lines.append(remainder)
+            elif remainder and remainder[0] in '.:,':
+                body_lines.append(remainder[1:].strip())
+        
+        # Collect lines until next heading
+        if idx + 1 < len(headings):
+            next_heading_line = headings[idx + 1][0]
+        else:
+            next_heading_line = len(lines)
+        
+        for i in range(body_start_line, next_heading_line):
+            line = lines[i].strip()
+            if not is_noise_line(line):
+                body_lines.append(line)
+        
+        # Build clause dict
+        clause_text = " ".join(body_lines).strip()
+        
+        clause_dict = {
+            "id": clause_id,
+            "title": title,
+            "text": clause_text,
+            "subclauses": []
+        }
+        
+        clauses[clause_id] = clause_dict
+    
+    # Organize into tree: move subclauses under parents
+    top_level = []
+    
+    for clause_id, clause_dict in clauses.items():
+        if is_subclause(clause_id):
+            # This is a subclause - find parent
+            parent_id = get_parent_clause_id(clause_id)
+            if parent_id and parent_id in clauses:
+                # Add to parent's subclauses
+                clauses[parent_id]["subclauses"].append(clause_dict)
+        else:
+            # This is a top-level clause
+            top_level.append(clause_dict)
+    
+    # Sort top-level by clause ID (natural sort)
+    top_level.sort(key=lambda c: _clause_sort_key(c["id"]))
+    
+    # Apply integrity rules: merge short/empty clauses
+    top_level = apply_integrity_rules(top_level)
+    
+    return top_level
+
+
+def apply_integrity_rules(clauses: list) -> list:
+    """
+    Filter/merge clauses that are too short or noisy.
+    
+    A clause is "valid" if it:
+      - Has >= 150 characters OR
+      - Has >= 2 sentences OR
+      - Has >= 1 subclause
+    
+    Otherwise merge with previous clause (if exists).
+    """
+    result = []
+    
+    for clause in clauses:
+        text = clause["text"]
+        subclauses = clause["subclauses"]
+        
+        # Calculate integrity score
+        char_count = len(text)
+        sentence_count = count_sentences(text)
+        subclause_count = len(subclauses)
+        
+        is_valid = (
+            char_count >= 150 or
+            sentence_count >= 2 or
+            subclause_count >= 1
+        )
+        
+        if is_valid:
+            # Keep this clause
+            result.append(clause)
+        elif result:
+            # Merge into previous clause
+            result[-1]["text"] += " " + text
+    
+    return result
+
+
+def _clause_sort_key(clause_id: str) -> tuple:
+    """
+    Natural sort key for clause IDs.
+    Converts "2.1.3" -> (2, 1, 3) for proper numeric sorting.
+    """
+    if "." in str(clause_id):
+        try:
+            parts = str(clause_id).split(".")
+            return tuple(int(p) for p in parts)
+        except ValueError:
+            return (0,)
+    else:
+        try:
+            return (int(str(clause_id).split()[0]),)
+        except (ValueError, IndexError):
+            return (0,)
+
+
+def segment_clauses(text: str) -> list:
+    """
+    Main entry point: segment contract text into clauses.
+    
+    Returns list of top-level clauses with nested subclauses.
+    """
+    return build_clause_tree(text)

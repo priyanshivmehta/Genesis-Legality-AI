@@ -25,6 +25,7 @@ ENV/
 env/
 .backend_venv/
 backend/venv/
+.env
 
 # Python tooling
 .pytest_cache/
