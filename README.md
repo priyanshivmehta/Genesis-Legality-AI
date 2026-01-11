@@ -32,7 +32,7 @@ Prerequisites
 1) Run the backend (FastAPI)
 
 ```bash
-cd backend
+cd backend\backend\
 # (optional) create and activate a virtualenv
 python -m venv .venv
 .\.venv\Scripts\activate
@@ -57,16 +57,6 @@ npm run dev
 
 Open the app (Vite dev server) at the URL printed by Vite (usually http://localhost:5173).
 
-3) Run the frontend dashboard (Next.js) — optional
-
-```bash
-cd frontend/project
-npm install
-npm run dev
-```
-
-The Next.js app typically runs on `http://localhost:3000`.
-
 ---
 
 ## Usage Example — Analyze a Contract (curl)
@@ -85,9 +75,9 @@ The API returns a JSON analysis containing `summary`, `explanations`, and sugges
 
 ## Project Layout (high level)
 
-- `backend/` — Python backend and supporting tools
-  - `backend/app.py` — FastAPI entrypoint
-  - `backend/Risk_logic/` — contract analysis pipeline (ingestion, segmentation, intelligence, explainability, etc.)
+- `backend/backend/` — Python backend and supporting tools
+  - `backend/backend/app.py` — FastAPI entrypoint
+  - `backend/backend/Risk_logic/` — contract analysis pipeline (ingestion, segmentation, intelligence, explainability, etc.)
   - `backend/README.md` — notes for the backend
 - `frontend/` — Vite + React app (main UI)
   - `package.json` — scripts for dev/build
