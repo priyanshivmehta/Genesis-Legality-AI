@@ -44,7 +44,7 @@ const handleReview = async (perspective: PartyPerspective) => {
       formData.append("perspective", perspective);
     }
 
-    const response = await fetch("http://127.0.0.1:8000/analyze", {
+    const response = await fetch("https://genesis-legality-ai-1.onrender.com/analyze", {
       method: "POST",
       body: formData,
     });

@@ -13,3 +13,4 @@ pydantic
 pydantic-core
 python-dotenv
 requests
+pdfplumber
