@@ -14,3 +14,6 @@ pydantic-core
 python-dotenv
 requests
 pdfplumber
+python-docx 
+pytest-shutil
+
