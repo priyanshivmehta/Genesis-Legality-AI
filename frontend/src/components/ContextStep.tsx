@@ -13,8 +13,7 @@ export default function ContextStep({
   fileSize,
   onReview,
 }: ContextStepProps) {
-  const [selectedPerspective, setSelectedPerspective] =
-    useState<PartyPerspective>(null);
+  const [selectedPerspective, setSelectedPerspective] = useState<PartyPerspective>(null);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + ' B';
@@ -23,49 +22,57 @@ export default function ContextStep({
   };
 
   const handleReview = () => {
-    if (selectedPerspective && selectedPerspective !== null) {
-      onReview(selectedPerspective);
-    }
+    if (selectedPerspective) onReview(selectedPerspective);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
-      <div className="max-w-2xl w-full">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-semibold text-gray-900 mb-2">
-            We need a bit more information…
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+
+      {/* NAVBAR */}
+      <nav className="flex items-center justify-between px-8 py-4 border-b bg-white shadow-sm">
+        <div className="text-2xl font-bold tracking-tight text-blue-600">
+          Clause<span className="text-gray-900">AI</span>
+        </div>
+      </nav>
+
+      {/* DASHBOARD CONTENT */}
+      <div className="mx-auto w-full max-w-7xl px-8 py-10">
+
+        {/* PAGE HEADER */}
+        <div className="mb-8">
+          <h1 className="text-[1.85rem] font-semibold text-gray-900 mb-2 leading-tight bold">
+            We need some more information about your contract...
           </h1>
-          <p className="text-gray-600">
-            Help us tailor the analysis to your specific needs
+          <p className="text-gray-600 text-[0.95rem]">
+            Help us tailor your analysis by specifying your position in the agreement.
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-center space-x-3">
-            <FileText className="w-10 h-10 text-blue-600" />
-            <div>
-              <p className="font-medium text-gray-900">{fileName}</p>
-              <p className="text-sm text-gray-600">{formatFileSize(fileSize)}</p>
-            </div>
+        {/* FILE CARD */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 mb-8 flex items-center space-x-4">
+          <FileText className="w-10 h-10 text-blue-600" />
+          <div className="flex flex-col">
+            <p className="font-medium text-gray-900 text-[1rem]">{fileName}</p>
+            <p className="text-[0.9rem] text-gray-600">{formatFileSize(fileSize)}</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">
-              Which Party's Perspective Should We Review The Contract From?
-            </h2>
-            <div className="flex items-start space-x-2 text-sm text-gray-600 bg-blue-50 border border-blue-100 rounded-md p-3">
-              <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-              <p>
-                Your perspective matters. Different parties face different risks in
-                the same contract. We'll analyze obligations, liabilities, and terms
-                specific to your role.
-              </p>
-            </div>
+        {/* QUESTION + OPTIONS */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          
+          <h2 className="text-[1.25rem] font-semibold text-gray-900 mb-3">
+            Review Perspective
+          </h2>
+
+          <div className="flex items-start space-x-2 text-sm text-gray-600 bg-blue-50 border border-blue-100 rounded-md p-3 mb-6">
+            <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <p>
+              Every party has different risk exposure and obligations. Select the perspective from which we should evaluate the contract.
+            </p>
           </div>
 
-          <div className="space-y-3 mb-8">
+          <div className="space-y-4 mb-8">
+            {/* Disclosing */}
             <label
               className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all ${
                 selectedPerspective === 'disclosing'
@@ -78,22 +85,18 @@ export default function ContextStep({
                 name="perspective"
                 value="disclosing"
                 checked={selectedPerspective === 'disclosing'}
-                onChange={(e) =>
-                  setSelectedPerspective(e.target.value as 'disclosing')
-                }
+                onChange={(e) => setSelectedPerspective(e.target.value as 'disclosing')}
                 className="mt-1 w-4 h-4 text-blue-600"
               />
               <div className="ml-3 flex-1">
-                <div className="font-medium text-gray-900 mb-1">
-                  Disclosing Party
-                </div>
-                <div className="text-sm text-gray-600">
-                  You're sharing confidential information with another party (e.g.,
-                  your trade secrets, business plans, proprietary data)
+                <div className="font-medium text-gray-900 mb-1">Disclosing Party</div>
+                <div className="text-[0.9rem] text-gray-600 leading-relaxed">
+                  You are sharing confidential or sensitive information with another party.
                 </div>
               </div>
             </label>
 
+            {/* Receiving */}
             <label
               className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all ${
                 selectedPerspective === 'receiving'
@@ -106,37 +109,35 @@ export default function ContextStep({
                 name="perspective"
                 value="receiving"
                 checked={selectedPerspective === 'receiving'}
-                onChange={(e) =>
-                  setSelectedPerspective(e.target.value as 'receiving')
-                }
+                onChange={(e) => setSelectedPerspective(e.target.value as 'receiving')}
                 className="mt-1 w-4 h-4 text-blue-600"
               />
               <div className="ml-3 flex-1">
-                <div className="font-medium text-gray-900 mb-1">
-                  Receiving Party
-                </div>
-                <div className="text-sm text-gray-600">
-                  You're receiving confidential information from another party and
-                  must protect it (e.g., evaluating a partnership, reviewing vendor
-                  information)
+                <div className="font-medium text-gray-900 mb-1">Receiving Party</div>
+                <div className="text-[0.9rem] text-gray-600 leading-relaxed">
+                  You receive confidential information and are expected to protect it under the agreement.
                 </div>
               </div>
             </label>
           </div>
 
-          <button
-            onClick={handleReview}
-            disabled={!selectedPerspective}
-            className={`w-full flex items-center justify-center space-x-2 px-6 py-3 rounded-md font-medium transition-all ${
-              selectedPerspective
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            <span>Review Contract</span>
-            <ArrowRight className="w-5 h-5" />
-          </button>
+          {/* ACTIONS */}
+          <div className="flex justify-end">
+            <button
+              onClick={handleReview}
+              disabled={!selectedPerspective}
+              className={`px-6 py-2.5 rounded-md flex items-center space-x-2 font-medium transition-all ${
+                selectedPerspective
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              <span>Continue</span>
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+
       </div>
     </div>
   );

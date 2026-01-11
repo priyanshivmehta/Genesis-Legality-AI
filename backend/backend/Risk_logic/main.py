@@ -105,7 +105,7 @@ def main():
     print("="*80)
     
     # Configuration
-    contract_file = "NDA_test.pdf"  # Change to your contract file
+    contract_file = "./uploads/NDA_test.pdf"  # Change to your contract file
     playbook_file = "playbooks/sample_playbook.json"  # Optional
     contract_type = "nda"          # Options: nda, services, employment
     perspective = "vendor"       # Options: discloser/receiver, employer/employee, client/vendor

@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Activity, Navigation, Gauge, MapPin } from 'lucide-react';
-import { DriverData } from '@/project/utils/mockData';
+import { DriverData } from '../utils/mockData';
 
 interface MetricsPanelProps {
   data: DriverData;

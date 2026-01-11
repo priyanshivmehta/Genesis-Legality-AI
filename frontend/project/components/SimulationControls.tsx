@@ -10,7 +10,7 @@ import {
   Play,
   Pause,
 } from 'lucide-react';
-import { Button } from '@/project/components/ui/button';
+import { Button } from '@/components/ui/button';
 
 interface SimulationControlsProps {
   onAddFatigue: () => void;

@@ -1,8 +1,8 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, AlertTriangle, Info } from 'lucide-react';
-import { AlertEntry } from '@/project/utils/mockData';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AlertEntry } from '../utils/mockData';
 
 interface AlertLogProps {
   alerts: AlertEntry[];
