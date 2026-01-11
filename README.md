@@ -2,7 +2,8 @@
 
 **ClauseAI** is an enterprise-grade AI-powered legal contract analysis platform that automatically identifies risk clauses, extracts key entities, generates redline suggestions, and provides perspective-aware explanations—all in real-time.
 
-**Deployed link** - genesis-legality-ai-ugt2.vercel.app
+**Deployed link** - [genesis-legality-ai-ugt2.vercel.app](https://genesis-legality-ai-ugt2.vercel.app/)
+
 **Backend (FastAPI)** - https://genesis-legality-ai-1.onrender.com
 
 ---
