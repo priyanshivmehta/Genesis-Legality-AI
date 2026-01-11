@@ -15,7 +15,6 @@ Legal Contract Risk Analyzer — an integrated FastAPI backend and React/Next fr
 ## Quick Links
 
 - Backend FastAPI entry: `backend/backend/app.py`
-- Backend developer notes: [backend/README.md](backend/README.md)
 - Frontend (Vite) app: `frontend/` — see [frontend/package.json](frontend/package.json)
 - Frontend (Next) dashboard: `frontend/project/` — see [frontend/project/README_SETUP.md](frontend/project/README_SETUP.md)
 
